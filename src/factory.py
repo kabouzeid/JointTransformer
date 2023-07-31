@@ -26,7 +26,7 @@ def fetch_dataset_eval(args, seq=None):
 
 def fetch_dataset_devel(args, is_train, seq=None):
     split = args.trainsplit if is_train else args.valsplit
-    if args.method in ["arctic_sf"]:
+    if args.method in ["arctic_sf", "transformer_sf"]:
         if is_train:
             DATASET = ArcticDataset
         else:
@@ -137,6 +137,8 @@ def fetch_model(args):
         from src.models.field_sf.wrapper import FieldSFWrapper as Wrapper
     elif args.method in ["field_lstm"]:
         from src.models.field_lstm.wrapper import FieldLSTMWrapper as Wrapper
+    elif args.method in ["transformer_sf"]:
+        from src.models.transformer_sf.wrapper import TransformerSFWrapper as Wrapper
     else:
         assert False, f"Invalid method ({args.method})"
     model = Wrapper(args)

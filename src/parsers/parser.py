@@ -12,7 +12,14 @@ def construct_args():
         "--method",
         type=str,
         default=None,
-        choices=[None, "arctic_sf", "arctic_lstm", "field_sf", "field_lstm"],
+        choices=[
+            None,
+            "arctic_sf",
+            "arctic_lstm",
+            "field_sf",
+            "field_lstm",
+            "transformer_sf",
+        ],
     )
     parser.add_argument("--exp_key", type=str, default=None)
     parser.add_argument("--extraction_mode", type=str, default=None)
@@ -30,6 +37,8 @@ def construct_args():
         import src.parsers.configs.field_sf as config
     elif args.method in ["field_lstm"]:
         import src.parsers.configs.field_lstm as config
+    elif args.method in ["transformer_sf"]:
+        import src.parsers.configs.transformer_sf as config
     else:
         assert False
 

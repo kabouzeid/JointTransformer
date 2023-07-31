@@ -17,6 +17,10 @@ class ArcticSF(nn.Module):
             from src.nets.backbone.resnet import resnet50 as resnet
         elif backbone == "resnet18":
             from src.nets.backbone.resnet import resnet18 as resnet
+        elif backbone == "resnet101":
+            from src.nets.backbone.resnet import resnet101 as resnet
+        elif backbone == "resnet152":
+            from src.nets.backbone.resnet import resnet152 as resnet
         else:
             assert False
         self.backbone = resnet(pretrained=True)
