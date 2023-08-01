@@ -4,9 +4,12 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.optim as optim
+from pytorch_lightning.loggers.wandb import WandbLogger
+from tqdm import tqdm
 
 import common.pl_utils as pl_utils
 from common.comet_utils import log_dict
+from common.comet_utils import push_images as comet_push_images
 from common.pl_utils import avg_losses_cpu, push_checkpoint_metric
 from common.xdict import xdict
 
@@ -15,7 +18,6 @@ class AbstractPL(pl.LightningModule):
     def __init__(
         self,
         args,
-        push_images_fn,
         tracked_metric,
         metric_init_val,
         high_loss_val,
@@ -31,7 +33,6 @@ class AbstractPL(pl.LightningModule):
 
         self.started_training = False
         self.loss_dict_vec = []
-        self.push_images = push_images_fn
         self.vis_train_batches = []
         self.vis_val_batches = []
         self.high_loss_val = high_loss_val
@@ -212,6 +213,13 @@ class AbstractPL(pl.LightningModule):
                     im_list += curr_im_list
                 print("Rendering: %d/%d" % (batch_idx + 1, len(batches)))
 
-        self.push_images(self.experiment, im_list, self.global_step)
+        self.push_images(im_list)
         print("Done rendering (%.1fs)" % (time.time() - tic))
         return im_list
+
+    def push_images(self, images):
+        for logger in self.loggers:
+            if isinstance(logger, WandbLogger):
+                for image in images:
+                    logger.log_image(image["fig_name"], [image["im"]])
+        # comet_push_images(self.experiment, images, self.global_step)

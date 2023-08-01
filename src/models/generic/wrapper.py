@@ -6,7 +6,6 @@ import common.ld_utils as ld_utils
 import src.callbacks.process.process_generic as generic
 from common.abstract_pl import AbstractPL
 from common.body_models import MANODecimator, build_mano_aa
-from common.comet_utils import push_images
 from common.rend_utils import Renderer
 from common.xdict import xdict
 from src.utils.eval_modules import eval_fn_dict
@@ -23,7 +22,6 @@ class GenericWrapper(AbstractPL):
     def __init__(self, args):
         super().__init__(
             args,
-            push_images,
             "loss__val",
             float("inf"),
             high_loss_val=float("inf"),
