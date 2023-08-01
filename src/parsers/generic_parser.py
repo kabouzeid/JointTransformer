@@ -68,6 +68,18 @@ def add_generic_args(parser):
     parser.add_argument(
         "--lr_decay", type=float, default=None, help="Learning rate decay factor"
     )
+    parser.add_argument(
+        "--lr_warmup", type=float, default=None, help="Learning rate warmup for cosine"
+    )
+    parser.add_argument(
+        "--lr_min", type=float, default=None, help="Learning rate minimum for cosine"
+    )
+    parser.add_argument(
+        "--lr_warmup_steps",
+        type=float,
+        default=None,
+        help="Learning rate warmup steps for cosine",
+    )
     parser.add_argument("--num_exp", type=int, default=None)
     parser.add_argument("--acc_grad", type=int, default=None)
     parser.add_argument("--batch_size", type=int, default=None)

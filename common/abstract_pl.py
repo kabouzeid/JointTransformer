@@ -174,6 +174,31 @@ class AbstractPL(pl.LightningModule):
                     gamma=self.args.lr_decay,
                     # verbose=True,
                 )
+            case "cosine":
+                total_steps = self.trainer.estimated_stepping_batches
+                assert isinstance(total_steps, int)
+                warmup_steps = int(total_steps * self.args.lr_warmup_steps)
+                remaining_steps = total_steps - warmup_steps
+                scheduler = {
+                    "scheduler": optim.lr_scheduler.SequentialLR(
+                        optimizer,
+                        schedulers=[
+                            optim.lr_scheduler.LinearLR(
+                                optimizer,
+                                start_factor=self.args.lr_warmup / self.args.lr,
+                                end_factor=1,
+                                total_iters=warmup_steps,
+                            ),
+                            optim.lr_scheduler.CosineAnnealingLR(
+                                optimizer,
+                                T_max=remaining_steps,
+                                eta_min=self.args.lr_min,
+                            ),
+                        ],
+                        milestones=[warmup_steps],
+                    ),
+                    "interval": "step",
+                }
             case "1cycle":
                 scheduler = {
                     "scheduler": optim.lr_scheduler.OneCycleLR(
