@@ -7,6 +7,7 @@ from src.nets.hand_heads.hand_hmr import HandHMR
 from src.nets.hand_heads.hand_transformer import HandTransformer
 from src.nets.hand_heads.mano_head import MANOHead
 from src.nets.hand_heads.mano_params import ManoParams
+from src.nets.obj_heads.articulation_params import ArticulationParams
 from src.nets.obj_heads.obj_head import ArtiHead
 from src.nets.obj_heads.obj_hmr import ObjectHMR
 
@@ -27,12 +28,7 @@ class TransformerSF(nn.Module):
             assert False
         self.backbone = resnet(pretrained=True)
         feat_dim = get_backbone_info(backbone)["n_output_channels"]
-        # self.head_r = HandHMR(feat_dim, is_rhand=True, n_iter=3)
-        # self.head_l = HandHMR(feat_dim, is_rhand=False, n_iter=3)
-        self.head_r = HandTransformer(feat_dim, 49)
-        self.head_l = HandTransformer(feat_dim, 49)
-
-        self.head_o = ObjectHMR(feat_dim, n_iter=3)
+        self.head = HandTransformer(feat_dim, 49)
 
         self.mano_r = MANOHead(
             is_rhand=True, focal_length=focal_length, img_res=img_res
@@ -57,7 +53,7 @@ class TransformerSF(nn.Module):
         ############################
         # hmr_output_r = self.head_r(features)
         # hmr_output_l = self.head_l(features)
-        hmr_output_o = self.head_o(features)
+        # hmr_output_o = self.head_o(features)
 
         # mano_params_r = ManoParams(
         #     hmr_output_r["pose"], hmr_output_r["shape"], hmr_output_r["cam_t.wp"]
@@ -65,12 +61,11 @@ class TransformerSF(nn.Module):
         # mano_params_l = ManoParams(
         #     hmr_output_l["pose"], hmr_output_l["shape"], hmr_output_l["cam_t.wp"]
         # )
-        articulation_params = ArticulationParams(
-            hmr_output_o["rot"], hmr_output_o["radian"], hmr_output_o["cam_t.wp"]
-        )
+        # articulation_params = ArticulationParams(
+        #     hmr_output_o["rot"], hmr_output_o["radian"], hmr_output_o["cam_t.wp"]
+        # )
 
-        mano_params_r = self.head_r(features)
-        mano_params_l = self.head_l(features)
+        mano_params_r, mano_params_l, articulation_params = self.head(features)
 
         # mano_params_r = ManoParams(
         #     torch.zeros(features.shape[0], 16, 3, 3, requires_grad=True).to(
@@ -129,15 +124,3 @@ class TransformerSF(nn.Module):
         output.merge(arti_output)
         output["feat_vec"] = feat_vec.cpu().detach()
         return output
-
-
-from dataclasses import dataclass
-
-import torch
-
-
-@dataclass
-class ArticulationParams:
-    rotation: torch.Tensor  # rotation matrices for each joint (N, 3)
-    angle: torch.Tensor  # (N, 1)
-    root: torch.Tensor  # weak perspective camera (N, 3)
