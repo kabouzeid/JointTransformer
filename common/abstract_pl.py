@@ -21,6 +21,9 @@ class AbstractPL(pl.LightningModule):
         high_loss_val,
     ):
         super().__init__()
+        self.save_hyperparameters(
+            {k: v for k, v in args.items() if k not in ["experiment", "gpu"]}
+        )
         self.experiment = args.experiment
         self.args = args
         self.tracked_metric = tracked_metric
@@ -69,6 +72,7 @@ class AbstractPL(pl.LightningModule):
             running_loss_dict = avg_losses_cpu(self.loss_dict_vec)
             running_loss_dict = xdict(running_loss_dict).postfix("__train")
             log_dict(self.experiment, running_loss_dict, step=self.global_step)
+        self.log_dict(xdict(loss_dict).postfix("__train"), on_epoch=True)
         return loss_dict
 
     def on_train_epoch_end(self):
@@ -84,7 +88,8 @@ class AbstractPL(pl.LightningModule):
     def on_validation_epoch_end(self):
         outputs = self.val_step_outputs
         outputs = self.inference_epoch_end(outputs, postfix="__val")
-        self.log("loss__val", outputs["loss__val"])
+        # self.log("loss__val", outputs["loss__val"])
+        self.log_dict(outputs)  # type: ignore
         self.val_step_outputs.clear()  # free memory
         return outputs
 

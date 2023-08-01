@@ -1,12 +1,15 @@
-import comet_ml
 import os.path as op
 import sys
 from pprint import pformat
 
+import comet_ml
 import pytorch_lightning as pl
 import torch
 from loguru import logger
 from pytorch_lightning.callbacks import ModelCheckpoint, ModelSummary
+from pytorch_lightning.loggers.csv_logs import CSVLogger
+from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
+from pytorch_lightning.loggers.wandb import WandbLogger
 
 sys.path.append(".")
 
@@ -32,7 +35,7 @@ def main(args):
     ckpt_callback = ModelCheckpoint(
         monitor="loss__val",
         verbose=True,
-        save_top_k=5,
+        save_top_k=3,
         mode="min",
         every_n_epochs=args.eval_every_epoch,
         save_last=True,
@@ -49,7 +52,17 @@ def main(args):
         accumulate_grad_batches=args.acc_grad,
         devices=1,
         accelerator="gpu",
-        logger=None,
+        logger=False
+        if args.mute or args.fast_dev_run
+        else [
+            WandbLogger(
+                version=args.exp_key,
+                save_dir=args.log_dir,
+                project=args.project + "_" + args.setup,
+            ),
+            TensorBoardLogger(save_dir=args.log_dir, name="", version=""),
+            CSVLogger(save_dir=args.log_dir, name="", version=""),
+        ],
         min_epochs=args.num_epoch,
         max_epochs=args.num_epoch,
         callbacks=callbacks,

@@ -25,3 +25,5 @@ easydict
 pygit2==1.7
 ipdb
 opencv-python-headless
+wandb==0.15.7
+tensorboard==2.13.0
