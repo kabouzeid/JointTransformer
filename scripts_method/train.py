@@ -6,7 +6,12 @@ import comet_ml
 import pytorch_lightning as pl
 import torch
 from loguru import logger
-from pytorch_lightning.callbacks import ModelCheckpoint, ModelSummary
+from pytorch_lightning.callbacks import (
+    LearningRateMonitor,
+    ModelCheckpoint,
+    ModelSummary,
+)
+from pytorch_lightning.callbacks.progress.tqdm_progress import TQDMProgressBar
 from pytorch_lightning.loggers.csv_logs import CSVLogger
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from pytorch_lightning.loggers.wandb import WandbLogger
@@ -32,20 +37,23 @@ def main(args):
 
     wrapper.model.arti_head.object_tensors.to(device)
 
-    ckpt_callback = ModelCheckpoint(
-        monitor="loss__val",
-        verbose=True,
-        save_top_k=3,
-        mode="min",
-        every_n_epochs=args.eval_every_epoch,
-        save_last=True,
-        dirpath=op.join(args.log_dir, "checkpoints"),
-    )
+    logging_disabled = args.mute or args.fast_dev_run
+    callbacks = [
+        ModelCheckpoint(
+            monitor="loss__val",
+            verbose=True,
+            save_top_k=3,
+            mode="min",
+            every_n_epochs=args.eval_every_epoch,
+            save_last=True,
+            dirpath=op.join(args.log_dir, "checkpoints"),
+        ),
+        TQDMProgressBar(refresh_rate=1),
+        ModelSummary(max_depth=3),
+    ]
+    if not logging_disabled:
+        callbacks.append(LearningRateMonitor())
 
-    pbar_cb = pl.callbacks.progress.TQDMProgressBar(refresh_rate=1)
-
-    model_summary_cb = ModelSummary(max_depth=3)
-    callbacks = [ckpt_callback, pbar_cb, model_summary_cb]
     trainer = pl.Trainer(
         gradient_clip_val=args.grad_clip,
         gradient_clip_algorithm="norm",
@@ -53,7 +61,7 @@ def main(args):
         devices=1,
         accelerator="gpu",
         logger=False
-        if args.mute or args.fast_dev_run
+        if logging_disabled
         else [
             WandbLogger(
                 version=args.exp_key,
