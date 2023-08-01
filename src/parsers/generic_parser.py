@@ -51,6 +51,8 @@ def add_generic_args(parser):
     parser.add_argument(
         "--eval_every_epoch", type=int, default=None, help="Eval every k epochs"
     )
+    parser.add_argument("--optimizer", type=str, default=None)
+    parser.add_argument("--lr_scheduler", type=str, default=None)
     parser.add_argument(
         "--lr_dec_epoch",
         type=int,

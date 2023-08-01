@@ -153,10 +153,42 @@ class AbstractPL(pl.LightningModule):
         return loss_metric_dict
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr)
-        scheduler = optim.lr_scheduler.MultiStepLR(
-            optimizer, self.args.lr_dec_epoch, gamma=self.args.lr_decay, verbose=True
-        )
+        match self.args.optimizer:
+            case "adam":
+                # assert self.args.weight_decay == 0
+                optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr)
+            case "adamw":
+                optimizer = torch.optim.AdamW(
+                    self.parameters(),
+                    lr=self.args.lr,
+                    # weight_decay=self.args.weight_decay,
+                )
+            case _:
+                raise ValueError(f"Optimizer {self.args.optimizer} not supported")
+        match self.args.lr_scheduler:
+            case "step":
+                scheduler = optim.lr_scheduler.MultiStepLR(
+                    optimizer,
+                    self.args.lr_dec_epoch,
+                    gamma=self.args.lr_decay,
+                    # verbose=True,
+                )
+            case "1cycle":
+                scheduler = {
+                    "scheduler": optim.lr_scheduler.OneCycleLR(
+                        optimizer,
+                        max_lr=self.args.lr,
+                        total_steps=self.trainer.estimated_stepping_batches,
+                        # pct_start=0.05,
+                        # anneal_strategy="linear",
+                        # verbose=True,
+                    ),
+                    "interval": "step",
+                }
+            case _:
+                raise ValueError(
+                    f"Learning rate scheduler {self.args.lr_scheduler} not supported"
+                )
         return [optimizer], [scheduler]
 
     def visualize_batches(self, batches, postfix, no_tqdm=True):
