@@ -80,6 +80,9 @@ def add_generic_args(parser):
         default=None,
         help="Learning rate warmup steps for cosine",
     )
+    parser.add_argument(
+        "--weight_decay", type=float, default=None, help="AdamW weight decay"
+    )
     parser.add_argument("--num_exp", type=int, default=None)
     parser.add_argument("--acc_grad", type=int, default=None)
     parser.add_argument("--batch_size", type=int, default=None)

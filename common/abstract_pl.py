@@ -162,7 +162,7 @@ class AbstractPL(pl.LightningModule):
                 optimizer = torch.optim.AdamW(
                     self.parameters(),
                     lr=self.args.lr,
-                    # weight_decay=self.args.weight_decay,
+                    weight_decay=self.args.weight_decay,
                 )
             case _:
                 raise ValueError(f"Optimizer {self.args.optimizer} not supported")
