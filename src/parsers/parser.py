@@ -26,6 +26,8 @@ def construct_args():
     parser.add_argument("--img_feat_version", type=str, default=None)
     parser.add_argument("--window_size", type=int, default=None)
     parser.add_argument("--eval", action="store_true")
+    parser.add_argument("--backbone", type=str, default=None)
+    parser.add_argument("--freeze_backbone", action="store_true")
     parser = add_generic_args(parser)
     args = EasyDict(vars(parser.parse_args()))
 

@@ -1,7 +1,9 @@
+import torch
 import torch.nn as nn
 
 import common.ld_utils as ld_utils
 from common.xdict import xdict
+from src.nets.backbone.resnet import resnet50
 from src.nets.backbone.utils import get_backbone_info
 from src.nets.hand_heads.hand_hmr import HandHMR
 from src.nets.hand_heads.hand_transformer import HandTransformer
@@ -13,22 +15,30 @@ from src.nets.obj_heads.obj_hmr import ObjectHMR
 
 
 class TransformerSF(nn.Module):
-    def __init__(self, backbone, focal_length, img_res, args):
+    def __init__(self, backbone: str, focal_length: float, img_res: int, args):
         super(TransformerSF, self).__init__()
         self.args = args
-        if backbone == "resnet50":
-            from src.nets.backbone.resnet import resnet50 as resnet
-        elif backbone == "resnet18":
-            from src.nets.backbone.resnet import resnet18 as resnet
-        elif backbone == "resnet101":
-            from src.nets.backbone.resnet import resnet101 as resnet
-        elif backbone == "resnet152":
-            from src.nets.backbone.resnet import resnet152 as resnet
-        else:
-            assert False
-        self.backbone = resnet(pretrained=True)
-        feat_dim = get_backbone_info(backbone)["n_output_channels"]
-        self.head = HandTransformer(feat_dim, 49)
+        match backbone:
+            case "resnet50":
+                self.backbone = resnet50(pretrained=True)
+                self.head = HandTransformer(2048, 49)
+            case "vit-s":
+                self.backbone = ViT("dinov2_vits14")
+                self.head = HandTransformer(384, None)
+            case "vit-b":
+                self.backbone = ViT("dinov2_vitb14")
+                self.head = HandTransformer(768, None)
+            case "vit-l":
+                self.backbone = ViT("dinov2_vitl14")
+                self.head = HandTransformer(1024, None)
+            case "vit-g":
+                self.backbone = ViT("dinov2_vitg14")
+                self.head = HandTransformer(1536, None)
+            case _:
+                assert False
+
+        if args.freeze_backbone:
+            self.backbone.requires_grad_(False)
 
         self.mano_r = MANOHead(
             is_rhand=True, focal_length=focal_length, img_res=img_res
@@ -124,3 +134,17 @@ class TransformerSF(nn.Module):
         output.merge(arti_output)
         output["feat_vec"] = feat_vec.cpu().detach()
         return output
+
+
+# TODO: move to own file
+class ViT(nn.Module):
+    def __init__(self, kind: str):
+        super().__init__()
+        self.model = torch.hub.load("facebookresearch/dinov2", kind)
+
+    def forward(self, x):
+        return (
+            self.model(x, is_training=True)["x_norm_patchtokens"]
+            .transpose(1, 2)
+            .unsqueeze(-1)
+        )

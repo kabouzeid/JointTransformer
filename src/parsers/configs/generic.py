@@ -38,6 +38,7 @@ DEFAULT_ARGS_EGO = {
     "gpu_arch": "ampere",
     "gpu_min_mem": 20000,
     "extraction_mode": "",
+    "backbone": "resnet50",
 }
 DEFAULT_ARGS_ALLO = {
     "run_on": "",
@@ -78,4 +79,5 @@ DEFAULT_ARGS_ALLO = {
     "gpu_arch": "ampere",
     "gpu_min_mem": 20000,
     "extraction_mode": "",
+    "backbone": "resnet50",
 }

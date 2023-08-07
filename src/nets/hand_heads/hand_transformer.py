@@ -11,7 +11,7 @@ from src.nets.obj_heads.articulation_params import ArticulationParams
 
 
 class HandTransformer(nn.Module):
-    def __init__(self, feature_dim, num_features):
+    def __init__(self, feature_dim, num_feature_pos_enc: int | None):
         super().__init__()
         decoder_layer = nn.TransformerDecoderLayer(
             d_model=512, nhead=8, norm_first=True, batch_first=True
@@ -21,7 +21,11 @@ class HandTransformer(nn.Module):
         self.feature_mapping = nn.Linear(feature_dim, 512)
 
         self.embedding = nn.Parameter(torch.randn((18 * 2) + 3, 512))
-        self.feature_pos_enc = nn.Parameter(torch.randn(1, num_features, 512))
+        self.feature_pos_enc = (
+            nn.Parameter(torch.randn(1, num_feature_pos_enc, 512))
+            if num_feature_pos_enc is not None
+            else None
+        )
 
         self.pose_r_head = nn.Linear(512, 6)
         self.root_r_head = nn.Linear(512, 3)
@@ -36,9 +40,12 @@ class HandTransformer(nn.Module):
         self.radian_o_head = nn.Linear(512, 1)
 
     def forward(self, features):
-        B, C, _, _ = features.shape
-        context = self.feature_mapping(features.reshape(B, C, -1).transpose(1, 2))
-        context = context + self.feature_pos_enc
+        B = features.shape[0]
+        context = self.feature_mapping(
+            features.reshape(B, features.shape[1], -1).transpose(1, 2)
+        )
+        if self.feature_pos_enc is not None:
+            context = context + self.feature_pos_enc
         x = self.embedding.expand(B, -1, -1)
         out = self.decoder(x, context)
 
