@@ -11,7 +11,7 @@ Parts of the code are taken from https://github.com/MandyMo/pytorch_HMR
 
 
 def to_xy(x_homo):
-    assert isinstance(x_homo, (torch.FloatTensor, torch.cuda.FloatTensor))
+    # assert isinstance(x_homo, (torch.FloatTensor, torch.cuda.FloatTensor))
     assert x_homo.shape[1] == 3
     assert len(x_homo.shape) == 2
     batch_size = x_homo.shape[0]
@@ -21,7 +21,7 @@ def to_xy(x_homo):
 
 
 def to_xyz(x_homo):
-    assert isinstance(x_homo, (torch.FloatTensor, torch.cuda.FloatTensor))
+    # assert isinstance(x_homo, (torch.FloatTensor, torch.cuda.FloatTensor))
     assert x_homo.shape[1] == 4
     assert len(x_homo.shape) == 2
     batch_size = x_homo.shape[0]
@@ -31,7 +31,7 @@ def to_xyz(x_homo):
 
 
 def to_homo(x):
-    assert isinstance(x, (torch.FloatTensor, torch.cuda.FloatTensor))
+    # assert isinstance(x, (torch.FloatTensor, torch.cuda.FloatTensor))
     assert x.shape[1] == 3
     assert len(x.shape) == 2
     batch_size = x.shape[0]
@@ -41,7 +41,7 @@ def to_homo(x):
 
 
 def to_homo_batch(x):
-    assert isinstance(x, (torch.FloatTensor, torch.cuda.FloatTensor))
+    # assert isinstance(x, (torch.FloatTensor, torch.cuda.FloatTensor))
     assert x.shape[2] == 3
     assert len(x.shape) == 3
     batch_size = x.shape[0]
@@ -56,7 +56,7 @@ def to_xyz_batch(x_homo):
     Input: (B, N, 4)
     Ouput: (B, N, 3)
     """
-    assert isinstance(x_homo, (torch.FloatTensor, torch.cuda.FloatTensor))
+    # assert isinstance(x_homo, (torch.FloatTensor, torch.cuda.FloatTensor))
     assert x_homo.shape[2] == 4
     assert len(x_homo.shape) == 3
     batch_size = x_homo.shape[0]
@@ -67,7 +67,7 @@ def to_xyz_batch(x_homo):
 
 
 def to_xy_batch(x_homo):
-    assert isinstance(x_homo, (torch.FloatTensor, torch.cuda.FloatTensor))
+    # assert isinstance(x_homo, (torch.FloatTensor, torch.cuda.FloatTensor))
     assert x_homo.shape[2] == 3
     assert len(x_homo.shape) == 3
     batch_size = x_homo.shape[0]
