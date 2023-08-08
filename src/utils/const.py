@@ -4,3 +4,7 @@ from src.parsers.parser import construct_args
 args = construct_args()
 experiment, args = comet_utils.init_experiment(args)
 comet_utils.save_args(args, save_keys=["comet_key"])
+
+import torch
+
+torch.set_float32_matmul_precision("high")
