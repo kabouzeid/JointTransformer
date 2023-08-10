@@ -18,6 +18,7 @@ class TransformerSF(nn.Module):
     def __init__(self, backbone: str, focal_length: float, img_res: int, args):
         super(TransformerSF, self).__init__()
         self.args = args
+        # backbone output needs to be (B, C, H, W)
         match backbone:
             case "resnet50":
                 self.backbone = resnet50(pretrained=True)
@@ -34,6 +35,9 @@ class TransformerSF(nn.Module):
             case "vit-g":
                 self.backbone = ViT("dinov2_vitg14")
                 self.head = HandTransformer(1536, None)
+            case "swin-t" | "swin-s" | "swin-b" as kind:
+                self.backbone = Swin(kind)
+                self.head = HandTransformer(1024 if kind == "swin-b" else 768, 49)
             case _:
                 assert False
 
@@ -148,3 +152,34 @@ class ViT(nn.Module):
             .transpose(1, 2)
             .unsqueeze(-1)
         )
+
+
+# TODO: move to own file
+class Swin(nn.Module):
+    def __init__(self, kind: str):
+        super().__init__()
+        match kind:
+            case "swin-t":
+                from torchvision.models import swin_v2_t as swin
+                from torchvision.models.swin_transformer import (
+                    Swin_V2_T_Weights as Weights,
+                )
+            case "swin-s":
+                from torchvision.models import swin_v2_s as swin
+                from torchvision.models.swin_transformer import (
+                    Swin_V2_S_Weights as Weights,
+                )
+            case "swin-b":
+                from torchvision.models import swin_v2_b as swin
+                from torchvision.models.swin_transformer import (
+                    Swin_V2_B_Weights as Weights,
+                )
+            case _:
+                raise ValueError(f"Unknown kind {kind}")
+        self.model = swin(weights=Weights.DEFAULT)
+        self.model.avgpool = nn.Identity()
+        self.model.flatten = nn.Identity()
+        self.model.head = nn.Identity()
+
+    def forward(self, x):
+        return self.model(x)
