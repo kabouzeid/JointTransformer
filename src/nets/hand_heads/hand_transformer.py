@@ -11,14 +11,30 @@ from src.nets.obj_heads.articulation_params import ArticulationParams
 
 
 class HandTransformer(nn.Module):
-    def __init__(self, feature_dim, num_feature_pos_enc: int | None):
+    def __init__(
+        self,
+        feature_dim,
+        num_feature_pos_enc: int | None,
+        feature_mapping_mlp: bool = False,
+    ):
         super().__init__()
         decoder_layer = nn.TransformerDecoderLayer(
             d_model=512, nhead=8, norm_first=True, batch_first=True
         )
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=6)
 
-        self.feature_mapping = nn.Linear(feature_dim, 512)
+        if feature_mapping_mlp:
+            self.feature_mapping = nn.Sequential(
+                nn.Linear(feature_dim, 512),
+                nn.ReLU(),
+                nn.Dropout(),
+                nn.Linear(512, 512),
+                nn.ReLU(),
+                nn.Dropout(),
+                nn.Linear(512, 512),
+            )
+        else:
+            self.feature_mapping = nn.Linear(feature_dim, 512)
 
         self.embedding = nn.Parameter(torch.randn((18 * 2) + 3, 512))
         self.feature_pos_enc = (

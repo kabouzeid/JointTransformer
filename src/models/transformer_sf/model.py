@@ -22,22 +22,36 @@ class TransformerSF(nn.Module):
         match backbone:
             case "resnet50":
                 self.backbone = resnet50(pretrained=True)
-                self.head = HandTransformer(2048, 49)
+                self.head = HandTransformer(
+                    2048, 49, feature_mapping_mlp=args.feature_mapping_mlp
+                )
             case "vit-s":
                 self.backbone = ViT("dinov2_vits14")
-                self.head = HandTransformer(384, None)
+                self.head = HandTransformer(
+                    384, None, feature_mapping_mlp=args.feature_mapping_mlp
+                )
             case "vit-b":
                 self.backbone = ViT("dinov2_vitb14")
-                self.head = HandTransformer(768, None)
+                self.head = HandTransformer(
+                    768, None, feature_mapping_mlp=args.feature_mapping_mlp
+                )
             case "vit-l":
                 self.backbone = ViT("dinov2_vitl14")
-                self.head = HandTransformer(1024, None)
+                self.head = HandTransformer(
+                    1024, None, feature_mapping_mlp=args.feature_mapping_mlp
+                )
             case "vit-g":
                 self.backbone = ViT("dinov2_vitg14")
-                self.head = HandTransformer(1536, None)
+                self.head = HandTransformer(
+                    1536, None, feature_mapping_mlp=args.feature_mapping_mlp
+                )
             case "swin-t" | "swin-s" | "swin-b" as kind:
                 self.backbone = Swin(kind)
-                self.head = HandTransformer(1024 if kind == "swin-b" else 768, 49)
+                self.head = HandTransformer(
+                    1024 if kind == "swin-b" else 768,
+                    49,
+                    feature_mapping_mlp=args.feature_mapping_mlp,
+                )
             case _:
                 assert False
 
