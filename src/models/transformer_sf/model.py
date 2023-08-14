@@ -3,7 +3,7 @@ import torch.nn as nn
 
 import common.ld_utils as ld_utils
 from common.xdict import xdict
-from src.nets.backbone.resnet import resnet50
+from src.nets.backbone.resnet import resnet50, resnet101, resnet152
 from src.nets.backbone.utils import get_backbone_info
 from src.nets.hand_heads.hand_hmr import HandHMR
 from src.nets.hand_heads.hand_transformer import HandTransformer
@@ -22,6 +22,16 @@ class TransformerSF(nn.Module):
         match backbone:
             case "resnet50":
                 self.backbone = resnet50(pretrained=True)
+                self.head = HandTransformer(
+                    2048, 49, feature_mapping_mlp=args.feature_mapping_mlp
+                )
+            case "resnet101":
+                self.backbone = resnet101(pretrained=True)
+                self.head = HandTransformer(
+                    2048, 49, feature_mapping_mlp=args.feature_mapping_mlp
+                )
+            case "resnet152":
+                self.backbone = resnet152(pretrained=True)
                 self.head = HandTransformer(
                     2048, 49, feature_mapping_mlp=args.feature_mapping_mlp
                 )
