@@ -30,6 +30,8 @@ def construct_args():
     parser.add_argument("--freeze_backbone", action="store_true")
     parser.add_argument("--feature_mapping_mlp", action="store_true")
     parser.add_argument("--queries", type=str, default="per_joint")
+    parser.add_argument("--decoder_dim", type=int, default=512)
+    parser.add_argument("--decoder_depth", type=int, default=6)
     parser = add_generic_args(parser)
     args = EasyDict(vars(parser.parse_args()))
 

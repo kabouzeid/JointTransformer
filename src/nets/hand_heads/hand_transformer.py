@@ -1,4 +1,5 @@
 from ast import Tuple
+from typing import Optional
 
 import pytorch3d.transforms.rotation_conversions as rot_conv
 import torch
@@ -13,60 +14,68 @@ from src.nets.obj_heads.articulation_params import ArticulationParams
 class HandTransformer(nn.Module):
     def __init__(
         self,
-        feature_dim,
-        num_feature_pos_enc: int | None,
+        feature_dim: int,
+        decoder_dim: int = 512,
+        decoder_depth: int = 6,
+        num_feature_pos_enc: Optional[int] = None,
         feature_mapping_mlp: bool = False,
         queries: str = "per_joint",
     ):
         super().__init__()
         decoder_layer = nn.TransformerDecoderLayer(
-            d_model=512, nhead=8, norm_first=True, batch_first=True
+            d_model=decoder_dim,
+            nhead=decoder_dim // 64,
+            dim_feedforward=decoder_dim * 4,
+            norm_first=True,
+            batch_first=True,
         )
-        self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=6)
+        self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=decoder_depth)
 
         if feature_mapping_mlp:
             self.feature_mapping = nn.Sequential(
-                nn.Linear(feature_dim, 512),
+                nn.Linear(feature_dim, decoder_dim),
                 nn.ReLU(),
                 nn.Dropout(),
-                nn.Linear(512, 512),
+                nn.Linear(decoder_dim, decoder_dim),
                 nn.ReLU(),
                 nn.Dropout(),
-                nn.Linear(512, 512),
+                nn.Linear(decoder_dim, decoder_dim),
             )
         else:
-            self.feature_mapping = nn.Linear(feature_dim, 512)
+            self.feature_mapping = nn.Linear(feature_dim, decoder_dim)
 
         self.queries = queries
         match queries:
             case "single":
-                self.embedding = nn.Parameter(torch.zeros(1, 512))
+                self.embedding = nn.Parameter(torch.zeros(1, decoder_dim))
 
-                self.head = nn.Linear(512, 6 * 16 * 2 + 3 * 2 + 10 * 2 + 3 + 3 + 1)
+                self.head = nn.Linear(
+                    decoder_dim, 6 * 16 * 2 + 3 * 2 + 10 * 2 + 3 + 3 + 1
+                )
             case "per_hand":
-                self.embedding = nn.Parameter(torch.randn(3, 512))
+                self.embedding = nn.Parameter(torch.randn(3, decoder_dim))
 
-                self.r_head = nn.Linear(512, 6 * 16 + 3 + 10)
-                self.l_head = nn.Linear(512, 6 * 16 + 3 + 10)
-                self.o_head = nn.Linear(512, 3 + 3 + 1)
+                self.r_head = nn.Linear(decoder_dim, 6 * 16 + 3 + 10)
+                self.l_head = nn.Linear(decoder_dim, 6 * 16 + 3 + 10)
+                self.o_head = nn.Linear(decoder_dim, 3 + 3 + 1)
             case "per_joint":
-                self.embedding = nn.Parameter(torch.randn((18 * 2) + 3, 512))
+                self.embedding = nn.Parameter(torch.randn((18 * 2) + 3, decoder_dim))
 
-                self.pose_r_head = nn.Linear(512, 6)
-                self.root_r_head = nn.Linear(512, 3)
-                self.shape_r_head = nn.Linear(512, 10)
+                self.pose_r_head = nn.Linear(decoder_dim, 6)
+                self.root_r_head = nn.Linear(decoder_dim, 3)
+                self.shape_r_head = nn.Linear(decoder_dim, 10)
 
-                self.pose_l_head = nn.Linear(512, 6)
-                self.root_l_head = nn.Linear(512, 3)
-                self.shape_l_head = nn.Linear(512, 10)
+                self.pose_l_head = nn.Linear(decoder_dim, 6)
+                self.root_l_head = nn.Linear(decoder_dim, 3)
+                self.shape_l_head = nn.Linear(decoder_dim, 10)
 
-                self.rot_o_head = nn.Linear(512, 3)
-                self.root_o_head = nn.Linear(512, 3)
-                self.radian_o_head = nn.Linear(512, 1)
+                self.rot_o_head = nn.Linear(decoder_dim, 3)
+                self.root_o_head = nn.Linear(decoder_dim, 3)
+                self.radian_o_head = nn.Linear(decoder_dim, 1)
             case _:
                 raise ValueError(f"Unknown query type {queries}")
         self.feature_pos_enc = (
-            nn.Parameter(torch.randn(1, num_feature_pos_enc, 512))
+            nn.Parameter(torch.randn(1, num_feature_pos_enc, decoder_dim))
             if num_feature_pos_enc is not None
             else None
         )
@@ -83,7 +92,7 @@ class HandTransformer(nn.Module):
 
         match self.queries:
             case "single":
-                out = self.head(out[:, 0])  # B, 512
+                out = self.head(out[:, 0])  # B, decoder_dim
 
                 pose_r = out[:, : 6 * 16].reshape(-1, 6)
                 root_r = out[:, 6 * 16 : 6 * 16 + 3]
@@ -102,9 +111,9 @@ class HandTransformer(nn.Module):
                 radian_o = out[:, OFFSET + 3 + 3]
 
             case "per_hand":
-                r_out = out[:, 0]  # B, 512
-                l_out = out[:, 1]  # B, 512
-                o_out = out[:, 2]  # B, 512
+                r_out = out[:, 0]  # B, decoder_dim
+                l_out = out[:, 1]  # B, decoder_dim
+                o_out = out[:, 2]  # B, decoder_dim
 
                 r_out = self.r_head(r_out)
                 pose_r = r_out[:, : 6 * 16].reshape(-1, 6)
