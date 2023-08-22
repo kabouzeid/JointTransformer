@@ -16,5 +16,9 @@ def get_backbone_info(backbone):
         "hrnet_w48": {"n_output_channels": 720, "downsample_rate": 4},
         # 'hrnet_w64': {'n_output_channels': 2048, 'downsample_rate': 4},
         "dla34": {"n_output_channels": 512, "downsample_rate": 4},
+        "vit-s": {"n_output_channels": 384},
+        "vit-b": {"n_output_channels": 768},
+        "vit-l": {"n_output_channels": 1024},
+        "vit-g": {"n_output_channels": 1536},
     }
     return info[backbone]

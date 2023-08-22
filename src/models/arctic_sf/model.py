@@ -2,6 +2,8 @@ import torch.nn as nn
 
 import common.ld_utils as ld_utils
 from common.xdict import xdict
+from src.models.transformer_sf.model import ViT
+from src.nets.backbone.resnet import resnet18, resnet50, resnet101, resnet152
 from src.nets.backbone.utils import get_backbone_info
 from src.nets.hand_heads.hand_hmr import HandHMR
 from src.nets.hand_heads.mano_head import MANOHead
@@ -14,16 +16,27 @@ class ArcticSF(nn.Module):
         super(ArcticSF, self).__init__()
         self.args = args
         if backbone == "resnet50":
-            from src.nets.backbone.resnet import resnet50 as resnet
+            self.backbone = resnet50(pretrained=True)
         elif backbone == "resnet18":
-            from src.nets.backbone.resnet import resnet18 as resnet
+            self.backbone = resnet18(pretrained=True)
         elif backbone == "resnet101":
-            from src.nets.backbone.resnet import resnet101 as resnet
+            self.backbone = resnet101(pretrained=True)
         elif backbone == "resnet152":
-            from src.nets.backbone.resnet import resnet152 as resnet
+            self.backbone = resnet152(pretrained=True)
+        elif backbone == "vit-s":
+            self.backbone = ViT("dinov2_vits14")
+        elif backbone == "vit-b":
+            self.backbone = ViT("dinov2_vitb14")
+        elif backbone == "vit-l":
+            self.backbone = ViT("dinov2_vitl14")
+        elif backbone == "vit-g":
+            self.backbone = ViT("dinov2_vitg14")
         else:
             assert False
-        self.backbone = resnet(pretrained=True)
+
+        if args.freeze_backbone:
+            self.backbone.requires_grad_(False)
+
         feat_dim = get_backbone_info(backbone)["n_output_channels"]
         self.head_r = HandHMR(feat_dim, is_rhand=True, n_iter=3)
         self.head_l = HandHMR(feat_dim, is_rhand=False, n_iter=3)

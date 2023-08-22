@@ -9,7 +9,7 @@ class ArcticSFWrapper(GenericWrapper):
     def __init__(self, args):
         super().__init__(args)
         self.model = ArcticSF(
-            backbone="resnet50",
+            backbone=args.backbone,
             focal_length=args.focal_length,
             img_res=args.img_res,
             args=args,
