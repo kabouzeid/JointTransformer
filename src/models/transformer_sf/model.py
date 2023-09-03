@@ -124,7 +124,7 @@ class TransformerSF(nn.Module):
         query_names = meta_info["query_names"]
         K = meta_info["intrinsics"]
         features = self.backbone(images)
-        feat_vec = features.view(features.shape[0], features.shape[1], -1).sum(dim=2)
+        feat_vec = features.view(features.shape[0], features.shape[1], -1).mean(dim=2)
 
         ############################
         # hmr_output_r = self.head_r(features)
