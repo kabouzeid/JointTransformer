@@ -10,11 +10,11 @@ from src.datasets.tempo_inference_dataset_eval import TempoInferenceDatasetEval
 
 
 def fetch_dataset_eval(args, seq=None):
-    if args.method in ["arctic_sf"]:
+    if args.method in ["arctic_sf", "transformer_sf"]:
         DATASET = ArcticDatasetEval
     elif args.method in ["field_sf"]:
         DATASET = ArcticDatasetEval
-    elif args.method in ["arctic_lstm", "field_lstm"]:
+    elif args.method in ["arctic_lstm", "field_lstm", "transformer_mf"]:
         DATASET = TempoInferenceDatasetEval
     else:
         assert False
@@ -36,7 +36,7 @@ def fetch_dataset_devel(args, is_train, seq=None):
             DATASET = ArcticDataset
         else:
             DATASET = ArcticDataset
-    elif args.method in ["field_lstm", "arctic_lstm"]:
+    elif args.method in ["field_lstm", "arctic_lstm", "transformer_mf"]:
         if is_train:
             DATASET = TempoDataset
         else:
@@ -139,6 +139,8 @@ def fetch_model(args):
         from src.models.field_lstm.wrapper import FieldLSTMWrapper as Wrapper
     elif args.method in ["transformer_sf"]:
         from src.models.transformer_sf.wrapper import TransformerSFWrapper as Wrapper
+    elif args.method in ["transformer_mf"]:
+        from src.models.transformer_mf.wrapper import TransformerMFWrapper as Wrapper
     else:
         assert False, f"Invalid method ({args.method})"
     model = Wrapper(args)

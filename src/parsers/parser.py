@@ -19,6 +19,7 @@ def construct_args():
             "field_sf",
             "field_lstm",
             "transformer_sf",
+            "transformer_mf",
         ],
     )
     parser.add_argument("--exp_key", type=str, default=None)
@@ -32,6 +33,9 @@ def construct_args():
     parser.add_argument("--queries", type=str, default="per_joint")
     parser.add_argument("--decoder_dim", type=int, default=512)
     parser.add_argument("--decoder_depth", type=int, default=6)
+    parser.add_argument("--temporal_encoder", type=str, default="transformer")
+    parser.add_argument("--temporal_encoder_dim", type=int, default=384)
+    parser.add_argument("--temporal_encoder_depth", type=int, default=2)
     parser = add_generic_args(parser)
     args = EasyDict(vars(parser.parse_args()))
 
@@ -45,6 +49,8 @@ def construct_args():
         import src.parsers.configs.field_lstm as config
     elif args.method in ["transformer_sf"]:
         import src.parsers.configs.transformer_sf as config
+    elif args.method in ["transformer_mf"]:
+        import src.parsers.configs.transformer_mf as config
     else:
         assert False
 
