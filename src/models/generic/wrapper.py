@@ -75,7 +75,6 @@ class GenericWrapper(AbstractPL):
             v0_o_full,
             mask,
             cams,
-            bottom_anchor,
         ) = generic.prepare_templates(
             batch_size,
             models["mano_r"],
