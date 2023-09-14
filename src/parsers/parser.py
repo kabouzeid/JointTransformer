@@ -22,6 +22,7 @@ def construct_args():
             "transformer_mf",
         ],
     )
+    parser.add_argument("--precision", type=str, default="16")
     parser.add_argument("--exp_key", type=str, default=None)
     parser.add_argument("--extraction_mode", type=str, default=None)
     parser.add_argument("--img_feat_version", type=str, default=None)

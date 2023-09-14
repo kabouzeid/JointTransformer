@@ -60,7 +60,7 @@ def main(args):
         accumulate_grad_batches=args.acc_grad,
         devices=1,
         accelerator="gpu",
-        precision=16,
+        precision=args.precision,
         logger=False
         if logging_disabled
         else [
