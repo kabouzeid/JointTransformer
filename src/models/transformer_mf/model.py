@@ -93,6 +93,9 @@ class TransformerMF(nn.Module):
     #     return feat_vec
 
     def forward(self, inputs, meta_info):
+        # assert inputs["img"].allclose(
+        #     inputs["img_window"][:, self.args.window_size // 2]
+        # )
         images = inputs["img"]
         query_names = meta_info["query_names"]
         K = meta_info["intrinsics"]
