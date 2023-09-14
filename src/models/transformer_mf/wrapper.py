@@ -35,14 +35,15 @@ class TransformerMFWrapper(GenericWrapper):
 
     def set_training_flags(self):
         if not self.started_training:
-            sd_p = f"./logs/{self.args.img_feat_version}/checkpoints/last.ckpt"
-            sd = torch.load(sd_p)["state_dict"]
-            missing_keys, unexpected_keys = self.load_state_dict(sd, strict=False)
-            torch_utils.toggle_parameters(self, True)
-            logger.info(f"Loaded: {sd_p}")
-            logger.info(f"Missing keys: {missing_keys}")
-            logger.info(f"Unexpected keys: {unexpected_keys}")
-            self.model.loaded()
+            if self.args.img_feat_version:
+                sd_p = f"./logs/{self.args.img_feat_version}/checkpoints/last.ckpt"
+                sd = torch.load(sd_p)["state_dict"]
+                missing_keys, unexpected_keys = self.load_state_dict(sd, strict=False)
+                torch_utils.toggle_parameters(self, True)
+                logger.info(f"Loaded: {sd_p}")
+                logger.info(f"Missing keys: {missing_keys}")
+                logger.info(f"Unexpected keys: {unexpected_keys}")
+                self.model.loaded()
         self.started_training = True
 
     def inference(self, inputs, meta_info):

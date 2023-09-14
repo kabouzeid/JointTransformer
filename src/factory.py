@@ -4,6 +4,8 @@ from torch.utils.data import DataLoader
 from common.torch_utils import reset_all_seeds
 from src.datasets.arctic_dataset import ArcticDataset
 from src.datasets.arctic_dataset_eval import ArcticDatasetEval
+from src.datasets.tempo2_dataset import Tempo2Dataset
+from src.datasets.tempo2_dataset_eval import Tempo2DatasetEval
 from src.datasets.tempo_dataset import TempoDataset
 from src.datasets.tempo_inference_dataset import TempoInferenceDataset
 from src.datasets.tempo_inference_dataset_eval import TempoInferenceDatasetEval
@@ -14,8 +16,10 @@ def fetch_dataset_eval(args, seq=None):
         DATASET = ArcticDatasetEval
     elif args.method in ["field_sf"]:
         DATASET = ArcticDatasetEval
-    elif args.method in ["arctic_lstm", "field_lstm", "transformer_mf"]:
+    elif args.method in ["arctic_lstm", "field_lstm"]:
         DATASET = TempoInferenceDatasetEval
+    elif args.method in ["transformer_mf"]:
+        DATASET = Tempo2DatasetEval
     else:
         assert False
     if seq is not None:
@@ -36,11 +40,16 @@ def fetch_dataset_devel(args, is_train, seq=None):
             DATASET = ArcticDataset
         else:
             DATASET = ArcticDataset
-    elif args.method in ["field_lstm", "arctic_lstm", "transformer_mf"]:
+    elif args.method in ["field_lstm", "arctic_lstm"]:
         if is_train:
             DATASET = TempoDataset
         else:
             DATASET = TempoInferenceDataset
+    elif args.method in ["transformer_mf"]:
+        if is_train:
+            DATASET = Tempo2Dataset
+        else:
+            DATASET = Tempo2Dataset
     else:
         assert False
     if seq is not None:
@@ -95,7 +104,7 @@ def fetch_dataloader(args, mode, seq=None):
     if mode == "train":
         reset_all_seeds(args.seed)
         dataset = fetch_dataset_devel(args, is_train=True)
-        if type(dataset) == ArcticDataset:
+        if type(dataset) in [ArcticDataset, Tempo2Dataset]:
             collate_fn = None
         else:
             collate_fn = collate_custom_fn
@@ -113,7 +122,12 @@ def fetch_dataloader(args, mode, seq=None):
             dataset = fetch_dataset_eval(args, seq=seq)
         else:
             dataset = fetch_dataset_devel(args, is_train=False, seq=seq)
-        if type(dataset) in [ArcticDataset, ArcticDatasetEval]:
+        if type(dataset) in [
+            ArcticDataset,
+            ArcticDatasetEval,
+            Tempo2Dataset,
+            Tempo2DatasetEval,
+        ]:
             collate_fn = None
         else:
             collate_fn = collate_custom_fn

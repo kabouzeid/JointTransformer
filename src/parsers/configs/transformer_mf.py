@@ -4,8 +4,12 @@ DEFAULT_ARGS_EGO["batch_size"] = 64
 DEFAULT_ARGS_EGO["test_batch_size"] = 64
 # DEFAULT_ARGS_EGO["img_feat_version"] = "28bf3642f"
 DEFAULT_ARGS_EGO["num_epoch"] = 80
+DEFAULT_ARGS_EGO["window_size"] = 5
+DEFAULT_ARGS_EGO["window_dilation"] = 3
 
 DEFAULT_ARGS_ALLO["batch_size"] = 64
 DEFAULT_ARGS_ALLO["test_batch_size"] = 64
 # DEFAULT_ARGS_ALLO["img_feat_version"] = "3558f1342"
 DEFAULT_ARGS_ALLO["num_epoch"] = 10
+DEFAULT_ARGS_ALLO["window_size"] = 5
+DEFAULT_ARGS_ALLO["window_dilation"] = 3

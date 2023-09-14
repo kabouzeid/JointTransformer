@@ -83,35 +83,6 @@ class TransformerMF(nn.Module):
         self.img_res = img_res
         self.focal_length = focal_length
 
-        match args.temporal_encoder:
-            case "transformer":
-                temporal_encoder_dim = args.temporal_encoder_dim
-                temporal_encoder_layer = nn.TransformerEncoderLayer(
-                    d_model=temporal_encoder_dim,
-                    nhead=temporal_encoder_dim // 64,
-                    dim_feedforward=temporal_encoder_dim * 4,
-                    norm_first=True,
-                    batch_first=True,
-                )
-                self.temporal_encoder = nn.TransformerEncoder(
-                    temporal_encoder_layer, num_layers=args.temporal_encoder_depth
-                )
-                self.temporal_pos_enc = nn.Parameter(
-                    torch.randn(1, args.window_size, temporal_encoder_dim)
-                )
-                self.to_temporal_encoder = nn.Linear(feature_dim, temporal_encoder_dim)
-                self.from_temporal_encoder = nn.Linear(
-                    temporal_encoder_dim, feature_dim
-                )
-            case "lstm":
-                self.lstm = nn.LSTM(
-                    input_size=feature_dim,
-                    hidden_size=feature_dim // 2,
-                    num_layers=2,
-                    bidirectional=True,
-                    batch_first=True,
-                )
-
     def loaded(self):
         # for some reason the wrapper sets requires_grad, not sure why or if important, so overwrite it here again
         if self.args.freeze_backbone:
@@ -126,32 +97,7 @@ class TransformerMF(nn.Module):
         query_names = meta_info["query_names"]
         K = meta_info["intrinsics"]
         features = self.backbone(images)
-
-        S = self.args.window_size
-        BS, C, H, W = features.shape
-        assert BS % S == 0
-        B = BS // S
-        features = features.reshape(B, S, C, H, W)
-
-        features = features.permute(0, 3, 4, 1, 2)  # (B, H, W, S, C)
-        features = features.reshape(-1, S, C)
-
-        match self.args.temporal_encoder:
-            case "transformer":
-                features = self.from_temporal_encoder(
-                    self.temporal_encoder(
-                        self.to_temporal_encoder(features) + self.temporal_pos_enc
-                    )
-                )
-            case "lstm":
-                h0 = torch.randn(2 * 2, B * H * W, C // 2, device=features.device)
-                c0 = torch.randn(2 * 2, B * H * W, C // 2, device=features.device)
-                features, _ = self.lstm(features, (h0, c0))
-
-        features = features.reshape(B, H, W, S, C)
-        features = features.permute(0, 3, 4, 1, 2)  # (B, S, C, H, W)
-
-        features = features.reshape(B * S, C, H, W)
+        # features = torch.ones(images.shape[0], 1024, 256, 1).to(images.device)
 
         ############################
         # hmr_output_r = self.head_r(features)
