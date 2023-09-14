@@ -4,6 +4,7 @@ import torch.nn as nn
 import common.ld_utils as ld_utils
 import src.callbacks.process.process_generic as generic
 from common.xdict import xdict
+from src.models.transformer_sf.model import TransformerSF
 from src.nets.backbone.resnet import resnet50, resnet101, resnet152
 from src.nets.backbone.swin import Swin
 from src.nets.backbone.utils import get_backbone_info
@@ -17,128 +18,90 @@ from src.nets.obj_heads.obj_head import ArtiHead
 from src.nets.obj_heads.obj_hmr import ObjectHMR
 
 
-class TransformerMF(nn.Module):
+class TransformerMF(TransformerSF):
     def __init__(self, backbone: str, focal_length: float, img_res: int, args):
-        super().__init__()
-        self.args = args
-        # backbone output needs to be (B, C, H, W)
-        match backbone:
-            case "resnet50":
-                self.backbone = resnet50(pretrained=True)
-                feature_dim = 2048
-                num_feature_pos_enc = 49
-            case "resnet101":
-                self.backbone = resnet101(pretrained=True)
-                feature_dim = 2048
-                num_feature_pos_enc = 49
-            case "resnet152":
-                self.backbone = resnet152(pretrained=True)
-                feature_dim = 2048
-                num_feature_pos_enc = 49
-            case "vit-s":
-                self.backbone = ViT("dinov2_vits14")
-                feature_dim = 384
-                num_feature_pos_enc = None
-            case "vit-b":
-                self.backbone = ViT("dinov2_vitb14")
-                feature_dim = 768
-                num_feature_pos_enc = None
-            case "vit-l":
-                self.backbone = ViT("dinov2_vitl14")
-                feature_dim = 1024
-                num_feature_pos_enc = None
-            case "vit-g":
-                self.backbone = ViT("dinov2_vitg14")
-                feature_dim = 1536
-                num_feature_pos_enc = None
-            case "swin-t" | "swin-s" | "swin-b" as kind:
-                self.backbone = Swin(kind)
-                feature_dim = 1024 if kind == "swin-b" else 768
-                num_feature_pos_enc = 49
+        super().__init__(backbone, focal_length, img_res, args)
+
+        match args.temporal_fusion:
+            case "conv":
+                match args.window_size:
+                    case 3:
+                        paddings = (1, 1, 1, 0)
+                    case 5:
+                        paddings = (1, 1, 0, 0)
+                    case 7:
+                        paddings = (1, 0, 0, 0)
+                    case 9:
+                        paddings = (0, 0, 0, 0)
+                    case _:
+                        raise NotImplementedError
+                self.temporal_fusion = nn.Sequential(
+                    nn.Conv3d(
+                        self.feature_dim,
+                        128,
+                        kernel_size=(3, 3, 3),
+                        padding=(paddings[0], 1, 1),
+                    ),
+                    nn.BatchNorm3d(128),
+                    nn.ReLU(),
+                    nn.Conv3d(
+                        128,
+                        128,
+                        kernel_size=(3, 3, 3),
+                        padding=(paddings[1], 1, 1),
+                    ),
+                    nn.BatchNorm3d(128),
+                    nn.ReLU(),
+                    nn.Conv3d(
+                        128,
+                        128,
+                        kernel_size=(3, 3, 3),
+                        padding=(paddings[2], 1, 1),
+                    ),
+                    nn.BatchNorm3d(128),
+                    nn.ReLU(),
+                    nn.Conv3d(
+                        128,
+                        self.feature_dim,
+                        kernel_size=(3, 3, 3),
+                        padding=(paddings[3], 1, 1),
+                    ),
+                )
             case _:
-                assert False
-
-        self.head = HandTransformer(
-            feature_dim=feature_dim,
-            decoder_dim=args.decoder_dim,
-            decoder_depth=args.decoder_depth,
-            num_feature_pos_enc=num_feature_pos_enc,
-            feature_mapping_mlp=args.feature_mapping_mlp,
-            queries=args.queries,
-        )
-
-        if args.freeze_backbone:
-            self.backbone.requires_grad_(False)
-
-        self.mano_r = MANOHead(
-            is_rhand=True, focal_length=focal_length, img_res=img_res
-        )
-
-        self.mano_l = MANOHead(
-            is_rhand=False, focal_length=focal_length, img_res=img_res
-        )
-
-        self.arti_head = ArtiHead(focal_length=focal_length, img_res=img_res)
-        self.mode = "train"
-        self.img_res = img_res
-        self.focal_length = focal_length
+                raise NotImplementedError
 
     def loaded(self):
         # for some reason the wrapper sets requires_grad, not sure why or if important, so overwrite it here again
         if self.args.freeze_backbone:
             self.backbone.requires_grad_(False)
 
-    # def _fetch_img_feat(self, inputs):
-    #     feat_vec = inputs["img_feat"]
-    #     return feat_vec
-
     def forward(self, inputs, meta_info):
         # assert inputs["img"].allclose(
         #     inputs["img_window"][:, self.args.window_size // 2]
         # )
-        images = inputs["img"]
+        images = inputs["img_window"]
+        B, T, _, _, _ = images.shape
         query_names = meta_info["query_names"]
         K = meta_info["intrinsics"]
-        features = self.backbone(images)
-        # features = torch.ones(images.shape[0], 1024, 256, 1).to(images.device)
+        all_features = self.backbone(images.reshape(B * T, *images.shape[2:]))
+        all_features = all_features.reshape(
+            B, T, *all_features.shape[1:]
+        )  # B, T, C, H, W
+        center_features = all_features[:, self.args.window_size // 2]
 
-        ############################
-        # hmr_output_r = self.head_r(features)
-        # hmr_output_l = self.head_l(features)
-        # hmr_output_o = self.head_o(features)
+        match self.args.temporal_fusion:
+            case "conv":
+                fused_features = (
+                    self.temporal_fusion(all_features.transpose(1, 2))
+                    .transpose(1, 2)
+                    .squeeze(1)
+                )
 
-        # mano_params_r = ManoParams(
-        #     hmr_output_r["pose"], hmr_output_r["shape"], hmr_output_r["cam_t.wp"]
-        # )
-        # mano_params_l = ManoParams(
-        #     hmr_output_l["pose"], hmr_output_l["shape"], hmr_output_l["cam_t.wp"]
-        # )
-        # articulation_params = ArticulationParams(
-        #     hmr_output_o["rot"], hmr_output_o["radian"], hmr_output_o["cam_t.wp"]
-        # )
+                fused_features = fused_features + center_features
+            case _:
+                raise NotImplementedError
 
-        mano_params_r, mano_params_l, articulation_params = self.head(features)
-
-        # mano_params_r = ManoParams(
-        #     torch.zeros(features.shape[0], 16, 3, 3, requires_grad=True).to(
-        #         features.device
-        #     ),
-        #     torch.zeros(features.shape[0], 10, requires_grad=True).to(features.device),
-        #     torch.zeros(features.shape[0], 3, requires_grad=True).to(features.device),
-        # )
-        # mano_params_l = ManoParams(
-        #     torch.zeros(features.shape[0], 16, 3, 3, requires_grad=True).to(
-        #         features.device
-        #     ),
-        #     torch.zeros(features.shape[0], 10, requires_grad=True).to(features.device),
-        #     torch.zeros(features.shape[0], 3, requires_grad=True).to(features.device),
-        # )
-        # articulation_params = ArticulationParams(
-        #     torch.zeros(features.shape[0], 3, requires_grad=True).to(features.device),
-        #     torch.zeros(features.shape[0], 1, requires_grad=True).to(features.device),
-        #     torch.zeros(features.shape[0], 3, requires_grad=True).to(features.device),
-        # )
-        ############################
+        mano_params_r, mano_params_l, articulation_params = self.head(fused_features)
 
         mano_output_r = self.mano_r(
             rotmat=mano_params_r.pose,
@@ -162,10 +125,6 @@ class TransformerMF(nn.Module):
             cam=articulation_params.root,
             K=K,
         )
-
-        # mano_output_r["cam_t.wp.init.r"] = hmr_output_r["cam_t.wp.init"]
-        # mano_output_l["cam_t.wp.init.l"] = hmr_output_l["cam_t.wp.init"]
-        # arti_output["cam_t.wp.init"] = hmr_output_o["cam_t.wp.init"]
 
         mano_output_r = ld_utils.prefix_dict(mano_output_r, "mano.")
         mano_output_l = ld_utils.prefix_dict(mano_output_l, "mano.")

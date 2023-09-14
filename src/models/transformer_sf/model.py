@@ -18,92 +18,53 @@ from src.nets.obj_heads.obj_hmr import ObjectHMR
 
 class TransformerSF(nn.Module):
     def __init__(self, backbone: str, focal_length: float, img_res: int, args):
-        super(TransformerSF, self).__init__()
+        super().__init__()
         self.args = args
         # backbone output needs to be (B, C, H, W)
         match backbone:
             case "resnet50":
                 self.backbone = resnet50(pretrained=True)
-                self.head = HandTransformer(
-                    2048,
-                    decoder_dim=args.decoder_dim,
-                    decoder_depth=args.decoder_depth,
-                    num_feature_pos_enc=49,
-                    feature_mapping_mlp=args.feature_mapping_mlp,
-                    queries=args.queries,
-                )
+                self.feature_dim = 2048
+                num_feature_pos_enc = 49
             case "resnet101":
                 self.backbone = resnet101(pretrained=True)
-                self.head = HandTransformer(
-                    2048,
-                    decoder_dim=args.decoder_dim,
-                    decoder_depth=args.decoder_depth,
-                    num_feature_pos_enc=49,
-                    feature_mapping_mlp=args.feature_mapping_mlp,
-                    queries=args.queries,
-                )
+                self.feature_dim = 2048
+                num_feature_pos_enc = 49
             case "resnet152":
                 self.backbone = resnet152(pretrained=True)
-                self.head = HandTransformer(
-                    2048,
-                    decoder_dim=args.decoder_dim,
-                    decoder_depth=args.decoder_depth,
-                    num_feature_pos_enc=49,
-                    feature_mapping_mlp=args.feature_mapping_mlp,
-                    queries=args.queries,
-                )
+                self.feature_dim = 2048
+                num_feature_pos_enc = 49
             case "vit-s":
                 self.backbone = ViT("dinov2_vits14")
-                self.head = HandTransformer(
-                    384,
-                    decoder_dim=args.decoder_dim,
-                    decoder_depth=args.decoder_depth,
-                    num_feature_pos_enc=None,
-                    feature_mapping_mlp=args.feature_mapping_mlp,
-                    queries=args.queries,
-                )
+                self.feature_dim = 384
+                num_feature_pos_enc = None
             case "vit-b":
                 self.backbone = ViT("dinov2_vitb14")
-                self.head = HandTransformer(
-                    768,
-                    decoder_dim=args.decoder_dim,
-                    decoder_depth=args.decoder_depth,
-                    num_feature_pos_enc=None,
-                    feature_mapping_mlp=args.feature_mapping_mlp,
-                    queries=args.queries,
-                )
+                self.feature_dim = 768
+                num_feature_pos_enc = None
             case "vit-l":
                 self.backbone = ViT("dinov2_vitl14")
-                self.head = HandTransformer(
-                    1024,
-                    decoder_dim=args.decoder_dim,
-                    decoder_depth=args.decoder_depth,
-                    num_feature_pos_enc=None,
-                    feature_mapping_mlp=args.feature_mapping_mlp,
-                    queries=args.queries,
-                )
+                self.feature_dim = 1024
+                num_feature_pos_enc = None
             case "vit-g":
                 self.backbone = ViT("dinov2_vitg14")
-                self.head = HandTransformer(
-                    1536,
-                    decoder_dim=args.decoder_dim,
-                    decoder_depth=args.decoder_depth,
-                    num_feature_pos_enc=None,
-                    feature_mapping_mlp=args.feature_mapping_mlp,
-                    queries=args.queries,
-                )
+                self.feature_dim = 1536
+                num_feature_pos_enc = None
             case "swin-t" | "swin-s" | "swin-b" as kind:
                 self.backbone = Swin(kind)
-                self.head = HandTransformer(
-                    1024 if kind == "swin-b" else 768,
-                    decoder_dim=args.decoder_dim,
-                    decoder_depth=args.decoder_depth,
-                    num_feature_pos_enc=49,
-                    feature_mapping_mlp=args.feature_mapping_mlp,
-                    queries=args.queries,
-                )
+                self.feature_dim = 1024 if kind == "swin-b" else 768
+                num_feature_pos_enc = 49
             case _:
                 assert False
+
+        self.head = HandTransformer(
+            feature_dim=self.feature_dim,
+            decoder_dim=args.decoder_dim,
+            decoder_depth=args.decoder_depth,
+            num_feature_pos_enc=num_feature_pos_enc,
+            feature_mapping_mlp=args.feature_mapping_mlp,
+            queries=args.queries,
+        )
 
         if args.freeze_backbone:
             self.backbone.requires_grad_(False)

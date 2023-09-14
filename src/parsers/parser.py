@@ -36,9 +36,7 @@ def construct_args():
     parser.add_argument("--queries", type=str, default="per_joint")
     parser.add_argument("--decoder_dim", type=int, default=512)
     parser.add_argument("--decoder_depth", type=int, default=6)
-    parser.add_argument("--temporal_encoder", type=str, default="transformer")
-    parser.add_argument("--temporal_encoder_dim", type=int, default=384)
-    parser.add_argument("--temporal_encoder_depth", type=int, default=2)
+    parser.add_argument("--temporal_fusion", type=str, default="conv")
     parser = add_generic_args(parser)
     args = EasyDict(vars(parser.parse_args()))
 
