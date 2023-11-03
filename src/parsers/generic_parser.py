@@ -29,14 +29,21 @@ def add_generic_args(parser):
         "--trainsplit",
         type=str,
         default=None,
-        choices=[None, "train", "smalltrain", "minitrain", "tinytrain"],
+        choices=[
+            None,
+            "train",
+            "smalltrain",
+            "minitrain",
+            "tinytrain",
+            "train.yaml",
+        ],
         help="Amount to subsample training set.",
     )
     parser.add_argument(
         "--valsplit",
         type=str,
         default=None,
-        choices=[None, "val", "smallval", "tinyval", "minival"],
+        choices=[None, "val", "smallval", "tinyval", "minival", "test.yaml"],
         help="Amount to subsample validation set.",
     )
     parser.add_argument(

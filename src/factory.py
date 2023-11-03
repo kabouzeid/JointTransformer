@@ -4,6 +4,8 @@ from torch.utils.data import DataLoader
 from common.torch_utils import reset_all_seeds
 from src.datasets.arctic_dataset import ArcticDataset
 from src.datasets.arctic_dataset_eval import ArcticDatasetEval
+from src.datasets.build import build_hand_dataset
+from src.datasets.hand_mesh_tsv import HandMeshTSVYamlDataset
 from src.datasets.tempo2_dataset import Tempo2Dataset
 from src.datasets.tempo2_dataset_eval import Tempo2DatasetEval
 from src.datasets.tempo_dataset import TempoDataset
@@ -20,6 +22,8 @@ def fetch_dataset_eval(args, seq=None):
         DATASET = TempoInferenceDatasetEval
     elif args.method in ["transformer_mf"]:
         DATASET = Tempo2DatasetEval
+    elif args.method in ["transformer_sh_sf"]:
+        return build_hand_dataset("test.yaml", args, is_train=False)
     else:
         assert False
     if seq is not None:
@@ -50,6 +54,8 @@ def fetch_dataset_devel(args, is_train, seq=None):
             DATASET = Tempo2Dataset
         else:
             DATASET = Tempo2Dataset
+    elif args.method in ["transformer_sh_sf"]:
+        return build_hand_dataset(split, args, is_train=is_train)
     else:
         assert False
     if seq is not None:
@@ -104,7 +110,7 @@ def fetch_dataloader(args, mode, seq=None):
     if mode == "train":
         reset_all_seeds(args.seed)
         dataset = fetch_dataset_devel(args, is_train=True)
-        if type(dataset) in [ArcticDataset, Tempo2Dataset]:
+        if type(dataset) in [ArcticDataset, Tempo2Dataset, HandMeshTSVYamlDataset]:
             collate_fn = None
         else:
             collate_fn = collate_custom_fn
@@ -127,6 +133,7 @@ def fetch_dataloader(args, mode, seq=None):
             ArcticDatasetEval,
             Tempo2Dataset,
             Tempo2DatasetEval,
+            HandMeshTSVYamlDataset,
         ]:
             collate_fn = None
         else:
@@ -155,6 +162,10 @@ def fetch_model(args):
         from src.models.transformer_sf.wrapper import TransformerSFWrapper as Wrapper
     elif args.method in ["transformer_mf"]:
         from src.models.transformer_mf.wrapper import TransformerMFWrapper as Wrapper
+    elif args.method in ["transformer_sh_sf"]:
+        from src.models.transformer_sh_sf.wrapper import (
+            TransformerSHSFWrapper as Wrapper,
+        )
     else:
         assert False, f"Invalid method ({args.method})"
     model = Wrapper(args)

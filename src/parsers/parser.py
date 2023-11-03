@@ -20,6 +20,7 @@ def construct_args():
             "field_lstm",
             "transformer_sf",
             "transformer_mf",
+            "transformer_sh_sf",
         ],
     )
     parser.add_argument("--precision", type=str, default="16")
@@ -52,6 +53,8 @@ def construct_args():
         import src.parsers.configs.transformer_sf as config
     elif args.method in ["transformer_mf"]:
         import src.parsers.configs.transformer_mf as config
+    elif args.method in ["transformer_sh_sf"]:
+        import src.parsers.configs.transformer_sh_sf as config
     else:
         assert False
 
@@ -80,6 +83,8 @@ def construct_args():
 
     if args.method in ["field_sf", "field_lstm"]:
         args.project = "interfield"
+    if args.method in ["transformer_sh_sf"]:
+        args.project = "freihand"
     else:
         args.project = "arctic"
     args.interface_p = None
