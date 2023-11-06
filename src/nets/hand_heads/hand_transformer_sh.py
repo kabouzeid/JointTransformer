@@ -20,6 +20,7 @@ class HandTransformerSH(nn.Module):
         num_feature_pos_enc: Optional[int] = None,
         feature_mapping_mlp: bool = False,
         queries: str = "per_joint",
+        num_registers: int = 0,
     ):
         super().__init__()
         decoder_layer = nn.TransformerDecoderLayer(
@@ -44,14 +45,27 @@ class HandTransformerSH(nn.Module):
         else:
             self.feature_mapping = nn.Linear(feature_dim, decoder_dim)
 
-        assert queries == "per_joint"
         self.queries = queries
 
-        self.embedding = nn.Parameter(torch.randn(18, decoder_dim))
+        match queries:
+            case "per_hand":
+                self.embedding = nn.Parameter(
+                    torch.randn(3 + num_registers, decoder_dim)
+                )
 
-        self.pose_r_head = nn.Linear(decoder_dim, 6)
-        self.root_r_head = nn.Linear(decoder_dim, 3)
-        self.shape_r_head = nn.Linear(decoder_dim, 10)
+                self.pose_r_head = nn.Linear(decoder_dim, 6 * 16)
+                self.root_r_head = nn.Linear(decoder_dim, 3)
+                self.shape_r_head = nn.Linear(decoder_dim, 10)
+            case "per_joint":
+                self.embedding = nn.Parameter(
+                    torch.randn(18 + num_registers, decoder_dim)
+                )
+
+                self.pose_r_head = nn.Linear(decoder_dim, 6)
+                self.root_r_head = nn.Linear(decoder_dim, 3)
+                self.shape_r_head = nn.Linear(decoder_dim, 10)
+            case _:
+                raise ValueError(f"Unknown query type {queries}")
 
         self.feature_pos_enc = (
             nn.Parameter(torch.randn(1, num_feature_pos_enc, decoder_dim))
@@ -69,9 +83,17 @@ class HandTransformerSH(nn.Module):
         x = self.embedding.expand(B, -1, -1)
         out = self.decoder(x, context)
 
-        pose_r_out = out[:, :16]  # B, 16, 512
-        root_r_out = out[:, 16]
-        shape_r_out = out[:, 17]
+        match self.queries:
+            case "per_hand":
+                pose_r_out = out[:, 0]  # B, 512
+                root_r_out = out[:, 1]
+                shape_r_out = out[:, 2]
+            case "per_joint":
+                pose_r_out = out[:, :16]  # B, 16, 512
+                root_r_out = out[:, 16]
+                shape_r_out = out[:, 17]
+            case _:
+                assert False
 
         pose_r = self.pose_r_head(pose_r_out).reshape(-1, 6)
         shape_r = self.shape_r_head(shape_r_out)

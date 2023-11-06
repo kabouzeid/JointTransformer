@@ -64,6 +64,7 @@ class TransformerSHSF(nn.Module):
             num_feature_pos_enc=num_feature_pos_enc,
             feature_mapping_mlp=args.feature_mapping_mlp,
             queries=args.queries,
+            num_registers=args.num_registers,
         )
 
         if args.freeze_backbone:
