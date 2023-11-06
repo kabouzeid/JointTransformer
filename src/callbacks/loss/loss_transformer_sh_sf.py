@@ -77,9 +77,9 @@ def compute_loss(pred, gt, meta_info, args):
     # )
 
     loss_dict = {
-        "loss/mano/kp2d/r": (loss_keypoints_r, 5.0),
-        "loss/mano/kp3d/r": (loss_keypoints_3d_r, 5.0),
-        "loss/mano/pose/r": (loss_regr_pose_r, 10.0),
-        "loss/mano/beta/r": (loss_regr_betas_r, 0.001),
+        "loss/mano/kp2d/r": (loss_keypoints_r, args.loss_weight_kp2d),
+        "loss/mano/kp3d/r": (loss_keypoints_3d_r, args.loss_weight_kp3d),
+        "loss/mano/pose/r": (loss_regr_pose_r, args.loss_weight_pose),
+        "loss/mano/beta/r": (loss_regr_betas_r, args.loss_weight_betas),
     }
     return loss_dict

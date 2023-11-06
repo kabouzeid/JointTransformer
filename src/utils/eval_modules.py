@@ -6,6 +6,7 @@ import torch
 
 import common.metrics as metrics
 from common.torch_utils import unpad_vtensor
+from src.utils.eval_modules_freihand import eval_freihand_metrics
 
 warnings.filterwarnings("ignore")
 
@@ -449,6 +450,18 @@ def eval_acc_field(pred, targets, meta_info):
     assert metric_dict["acc/oh"].shape[0] == num_frames
     assert metric_dict["acc/ho"].shape[0] == num_frames
     return metric_dict
+
+
+# def eval_freihand(pred, targets, meta_info):
+#     xyz = pred["mano.j3d.wrist.r"]
+#     verts = pred["mano.v3d.wrist.r"]
+
+#     out = eval_freihand_metrics(xyz, verts)
+
+#     metric_dict = xdict(out)
+#     metric_dict = metric_dict.to_np()
+
+#     return metric_dict
 
 
 eval_fn_dict = {

@@ -139,6 +139,10 @@ class GenericWrapperSH(AbstractPL):
             mydict.merge(meta_info.prefix("meta_info."))
             mydict = mydict.detach()
             return mydict
+
+        if mode == "test":
+            out_dict["mano.j3d.wrist.r"] = pred["mano.j3d.wrist.r"].detach().cpu()
+            out_dict["mano.v3d.wrist.r"] = pred["mano.v3d.wrist.r"].detach().cpu()
         return out_dict, loss_dict
 
     def evaluate_metrics(self, pred, targets, meta_info, specs):

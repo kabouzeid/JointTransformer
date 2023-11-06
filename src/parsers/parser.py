@@ -38,6 +38,10 @@ def construct_args():
     parser.add_argument("--decoder_dim", type=int, default=512)
     parser.add_argument("--decoder_depth", type=int, default=6)
     parser.add_argument("--temporal_fusion", type=str, default="conv")
+    parser.add_argument("--loss_weight_kp2d", type=float, default=5.0)
+    parser.add_argument("--loss_weight_kp3d", type=float, default=5.0)
+    parser.add_argument("--loss_weight_pose", type=float, default=10.0)
+    parser.add_argument("--loss_weight_betas", type=float, default=0.001)
     parser = add_generic_args(parser)
     args = EasyDict(vars(parser.parse_args()))
 
