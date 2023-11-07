@@ -38,16 +38,32 @@ class TransformerSHSF(nn.Module):
                 self.backbone = ViT("dinov2_vits14")
                 self.feature_dim = 384
                 num_feature_pos_enc = None
+            case "vit-s-reg":
+                self.backbone = ViT("dinov2_vits14_reg")
+                self.feature_dim = 384
+                num_feature_pos_enc = None
             case "vit-b":
                 self.backbone = ViT("dinov2_vitb14")
+                self.feature_dim = 768
+                num_feature_pos_enc = None
+            case "vit-b-reg":
+                self.backbone = ViT("dinov2_vitb14_reg")
                 self.feature_dim = 768
                 num_feature_pos_enc = None
             case "vit-l":
                 self.backbone = ViT("dinov2_vitl14")
                 self.feature_dim = 1024
                 num_feature_pos_enc = None
+            case "vit-l-reg":
+                self.backbone = ViT("dinov2_vitl14_reg")
+                self.feature_dim = 1024
+                num_feature_pos_enc = None
             case "vit-g":
                 self.backbone = ViT("dinov2_vitg14")
+                self.feature_dim = 1536
+                num_feature_pos_enc = None
+            case "vit-g-reg":
+                self.backbone = ViT("dinov2_vitg14_reg")
                 self.feature_dim = 1536
                 num_feature_pos_enc = None
             case "swin-t" | "swin-s" | "swin-b" as kind:
