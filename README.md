@@ -1,3 +1,35 @@
+# JointTransformer
+
+Winner of the HANDS'2023 ARCTIC Challenge @ ICCV (1st place in both p1 and p2 tasks).
+
+[Arctic Leaderboard](https://arctic-leaderboard.is.tuebingen.mpg.de/leaderboard).
+
+
+## Installation
+
+Refer to the original [README](#original-readme) and install the requirements.
+
+```bash
+pip install -r requirements_frozen.txt
+```
+
+## Training
+
+For the allocentric task (p1) we used this command:
+
+```bash
+python scripts_method/train.py --setup p1 --method transformer_sf --trainsplit train --valsplit smallval --optimizer adamw --lr_scheduler cosine --lr 1e-4 --backbone vit-g --freeze_backbone --decoder_depth=12
+```
+
+For the egocentric task (p2) we used this command (where `504802f70` is the checkpoint from the p1 run):
+
+```bash
+python scripts_method/train.py --setup p2 --method transformer_sf --trainsplit train --valsplit smallval --optimizer adamw --lr_scheduler cosine --lr 1e-4 --backbone vit-g --freeze_backbone --decoder_depth=12 --load_ckpt logs/504802f70/checkpoints/last.ckpt --precision 32
+```
+
+---
+
+# Original README
 
 ## ARCTIC 🥶: A Dataset for Dexterous Bimanual Hand-Object Manipulation
 
