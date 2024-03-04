@@ -7,11 +7,38 @@ Winner of the HANDS'2023 ARCTIC Challenge @ ICCV (1st place in both p1 and p2 ta
 
 ## Installation
 
-Refer to the original [README](#original-readme) and install the requirements.
+### 1. Dependencies
+
+- Python 3.10.4
+- CUDA 11.8
 
 ```bash
+pip install -U pip wheel
+pip install torch torchvision -c requirements_frozen.txt --extra-index-url https://download.pytorch.org/whl/cu118
 pip install -r requirements_frozen.txt
 ```
+
+### 2. Patch `smplx`
+
+Modify `smplx` package to return 21 joints for instead of 16:
+
+```bash
+vim .venv/lib/python3.10/site-packages/smplx/body_models.py
+```
+
+Uncomment line 1681: `joints = self.vertex_joint_selector(vertices, joints)`.
+
+If you are unsure about where `body_models.py` is, run these on a terminal:
+
+```bash
+python
+>>> import smplx
+>>> print(smplx.__file__)
+```
+
+### 3. Dataset
+
+Refer to the original [README](#original-readme) to setup the dataset.
 
 ## Training
 
