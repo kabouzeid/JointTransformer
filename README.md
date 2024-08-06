@@ -47,12 +47,14 @@ For the allocentric task (p1) we used this command:
 ```bash
 python scripts_method/train.py --setup p1 --method transformer_sf --trainsplit train --valsplit smallval --optimizer adamw --lr_scheduler cosine --lr 1e-4 --backbone vit-g --freeze_backbone --decoder_depth=12
 ```
+[[`p1 checkpoint (504802f70)`](https://omnomnom.vision.rwth-aachen.de/data/jointtransformer/final_p1_504802f70.ckpt)]
 
 For the egocentric task (p2) we used this command (where `504802f70` is the checkpoint from the p1 run):
 
 ```bash
 python scripts_method/train.py --setup p2 --method transformer_sf --trainsplit train --valsplit smallval --optimizer adamw --lr_scheduler cosine --lr 1e-4 --backbone vit-g --freeze_backbone --decoder_depth=12 --load_ckpt logs/504802f70/checkpoints/last.ckpt --precision 32
 ```
+[[`p2 checkpoint (462fc683e)`](https://omnomnom.vision.rwth-aachen.de/data/jointtransformer/final_p2_462fc683e.ckpt)]
 
 ---
 
